@@ -11101,6 +11101,7 @@ debugger_agent_add_function_pointers(MonoComponentDebugger* fn_table)
 {
 	fn_table->parse_options = debugger_agent_parse_options;
 	fn_table->init = mono_debugger_agent_init_internal;
+	fn_table->cleanup = mono_debugger_agent_cleanup;
 	fn_table->breakpoint_hit = debugger_agent_breakpoint_hit;
 	fn_table->single_step_event = debugger_agent_single_step_event;
 	fn_table->single_step_from_context = debugger_agent_single_step_from_context;

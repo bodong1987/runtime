@@ -19,6 +19,9 @@ static void
 stub_debugger_init (void);
 
 static void
+stub_debugger_cleanup (void);
+
+static void
 stub_debugger_breakpoint_hit (void *sigctx);
 
 static void
@@ -75,6 +78,7 @@ stub_debugger_enabled (void);
 static MonoComponentDebugger fn_table = {
 	{ MONO_COMPONENT_ITF_VERSION, &debugger_available },
 	&stub_debugger_init,
+	&stub_debugger_cleanup,
 	&stub_debugger_user_break,
 	&stub_debugger_parse_options,
 	&stub_debugger_breakpoint_hit,
@@ -124,6 +128,11 @@ stub_debugger_parse_options (char *options)
 
 static void
 stub_debugger_init (void)
+{
+}
+
+static void
+stub_debugger_cleanup (void)
 {
 }
 

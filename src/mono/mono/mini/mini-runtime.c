@@ -5241,6 +5241,8 @@ runtime_cleanup (MonoDomain *domain, gpointer user_data)
 void
 mini_cleanup (MonoDomain *domain)
 {
+	mono_component_debugger ()->cleanup();
+
 	if (mono_stats.enabled)
 		g_printf ("Printing runtime stats at shutdown\n");
 	mono_runtime_print_stats ();
