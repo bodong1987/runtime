@@ -498,6 +498,8 @@ namespace System.Diagnostics.Tracing
                 if (value == null)
                     return;
 
+                Debug.WriteLine($"EventSource[{GetHashCode()}] add new one {value}({value.GetHashCode()}) from {System.Environment.StackTrace}");
+
                 m_eventCommandExecuted += value;
 
                 // If we have an EventHandler<EventCommandEventArgs> attached to the EventSource before the first command arrives
@@ -505,12 +507,16 @@ namespace System.Diagnostics.Tracing
                 EventCommandEventArgs? deferredCommands = m_deferredCommands;
                 while (deferredCommands != null)
                 {
+                    Debug.WriteLine($"EventSource[{GetHashCode()}]Invoke deferred command on this value:{deferredCommands}({deferredCommands.GetHashCode()} Command = {deferredCommands.Command})");
+
                     value(this, deferredCommands);
                     deferredCommands = deferredCommands.nextCommand;
                 }
             }
             remove
             {
+                Debug.WriteLine($"EventSource[{GetHashCode()}] remove one {value} from {System.Environment.StackTrace}");
+
                 m_eventCommandExecuted -= value;
             }
         }
@@ -2575,6 +2581,8 @@ namespace System.Diagnostics.Tracing
                 }
                 else
                 {
+                    Debug.WriteLine($"EventSource[{GetHashCode()}] Add {commandArgs} {commandArgs.GetHashCode()} Command={commandArgs.Command} to m_deferredCommands in SendCommand:\r\n{System.Environment.StackTrace}");
+
                     // We can't do the command, simply remember it and we do it when we are fully constructed.
                     if (m_deferredCommands == null)
                     {
