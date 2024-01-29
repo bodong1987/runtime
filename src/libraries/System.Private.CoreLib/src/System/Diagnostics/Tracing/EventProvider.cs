@@ -837,6 +837,8 @@ namespace System.Diagnostics.Tracing
         private static unsafe void Callback(Guid* sourceId, int isEnabled, byte level,
             long matchAnyKeywords, long matchAllKeywords, Interop.Advapi32.EVENT_FILTER_DESCRIPTOR* filterData, void* callbackContext)
         {
+            Debug.WriteLine($"EtwEventProvider.Callback started...");
+
             EtwEventProvider _this = (EtwEventProvider)GCHandle.FromIntPtr((IntPtr)callbackContext).Target!;
 
             if (_this._eventProvider.TryGetTarget(out EventProvider? target))
@@ -855,11 +857,17 @@ namespace System.Diagnostics.Tracing
             long registrationHandle = 0;
             _providerId = eventSource.Guid;
             Guid providerId = _providerId;
+
+            Debug.WriteLine($"EtwEventProvider.Register started... providerId = {_providerId}");
+
             uint status = Interop.Advapi32.EventRegister(
                 &providerId,
                 &Callback,
                 (void*)GCHandle.ToIntPtr(_gcHandle),
                 &registrationHandle);
+
+            Debug.WriteLine($"EtwEventProvider.Register Finish EventRegister...");
+
             if (status != 0)
             {
                 _gcHandle.Free();
@@ -1299,6 +1307,8 @@ namespace System.Diagnostics.Tracing
                         long matchAllKeywords,
                         Interop.Advapi32.EVENT_FILTER_DESCRIPTOR* filterData)
         {
+            Debug.WriteLine($"EventProviderImpl.ProviderCallback started, controlCode = {controlCode}...");
+
             // This is an optional callback API. We will therefore ignore any failures that happen as a
             // result of turning on this provider as to not crash the app.
             // EventSource has code to validate whether initialization it expected to occur actually occurred
