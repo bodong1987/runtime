@@ -1561,8 +1561,6 @@ namespace System.Diagnostics.Tracing
         // Used by the internal FrameworkEventSource constructor and the TraceLogging-style event source constructor
         internal EventSource(Guid eventSourceGuid, string eventSourceName, EventSourceSettings settings, string[]? traits = null)
         {
-            Debug.WriteLine($"EventSource constructed, guid={eventSourceGuid}, eventSourceName={eventSourceName}");
-
             if (IsSupported)
             {
 #if FEATURE_PERFTRACING
@@ -1582,8 +1580,6 @@ namespace System.Diagnostics.Tracing
         /// </summary>
         private unsafe void Initialize(Guid eventSourceGuid, string eventSourceName, string[]? traits)
         {
-            Debug.WriteLine($"EventSource Initialize {eventSourceGuid} : {eventSourceName}");
-
             try
             {
                 m_traits = traits;
@@ -1680,8 +1676,6 @@ namespace System.Diagnostics.Tracing
                 EventCommandEventArgs? deferredCommands = m_deferredCommands;
                 while (deferredCommands != null)
                 {
-                    Debug.WriteLine($"DoCommand:{deferredCommands} {deferredCommands.GetHashCode()}");
-
                     DoCommand(deferredCommands);      // This can never throw, it catches them and reports the errors.
                     deferredCommands = deferredCommands.nextCommand;
                 }
