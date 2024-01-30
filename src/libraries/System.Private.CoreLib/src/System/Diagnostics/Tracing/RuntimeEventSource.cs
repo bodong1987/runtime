@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Threading;
+using System.IO;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -63,7 +64,43 @@ namespace System.Diagnostics.Tracing
             // initializing more than once may lead to missing events
             Debug.Assert(s_RuntimeEventSource == null);
             if (IsSupported)
+            {
+                RuntimeEventSource.Log("Initialize IsSupported.");
                 s_RuntimeEventSource = new RuntimeEventSource();
+            }
+            else
+            {
+                RuntimeEventSource.Log("Initialize not Supported.");
+            }
+        }
+
+        /// <summary>
+        /// The log stream
+        /// </summary>
+        private static FileStream? LogStream;
+
+        public static void Log(string message)
+        {
+#pragma warning disable IDE0074
+            if (LogStream == null)
+            {
+                LogStream = new FileStream(
+                "J:\\dotnet.mono.libs.log",
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read
+                );
+            }
+
+#pragma warning restore IDE0074
+            //LogStream.Write(new byte[] { 10 });
+            var bytes = System.Text.Encoding.UTF8.GetBytes(message + "\n");
+            LogStream.Write(bytes, 0, bytes.Length);
+            //LogStream.Write(new byte[] { 10 });
+
+            LogStream.Flush();
+
+            Debug.WriteLine(message);
         }
 
         // Parameterized constructor to block initialization and ensure the EventSourceGenerator is creating the default constructor

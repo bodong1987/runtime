@@ -793,6 +793,8 @@ namespace System.Diagnostics.Tracing
         {
             Debug.Assert(additionalData == null);
 
+            RuntimeEventSource.Log("EtwEventProvider HandleEnableNotification...");
+
             // The GetSessions() logic was here to support the idea that different ETW sessions
             // could have different user-defined filters. (I believe it is currently broken.)
             //
@@ -809,6 +811,8 @@ namespace System.Diagnostics.Tracing
                 IDictionary<string, string?>? args = null;
                 ControllerCommand command = ControllerCommand.Update;
 
+                RuntimeEventSource.Log("process session info: " + session.Key.etwSessionId + " " + session.Key.sessionIdBit + " bEnabling=" + bEnabling);
+
                 // read filter data only when a session is being *added*
                 if (bEnabling)
                 {
@@ -817,14 +821,18 @@ namespace System.Diagnostics.Tracing
                     // of knowing which one "filterData" belongs to
                     if (sessionsChanged.Count > 1 || filterData == null)
                     {
+                        RuntimeEventSource.Log("TryReadRegistryFilterData...");
                         TryReadRegistryFilterData(session.Key.etwSessionId, out command, out filterDataBytes);
                     }
                     else
                     {
+                        RuntimeEventSource.Log("MarshalFilterData...");
                         MarshalFilterData(filterData, out command, out filterDataBytes);
                     }
                     args = ParseFilterData(filterDataBytes);
                 }
+
+                RuntimeEventSource.Log("invoke OnControllerCommand, command = " + command.ToString());
 
                 // execute OnControllerCommand once for every session that has changed.
                 // If the sessionId argument is positive it will be sent to the EventSource as an Enable,
@@ -837,6 +845,8 @@ namespace System.Diagnostics.Tracing
         private static unsafe void Callback(Guid* sourceId, int isEnabled, byte level,
             long matchAnyKeywords, long matchAllKeywords, Interop.Advapi32.EVENT_FILTER_DESCRIPTOR* filterData, void* callbackContext)
         {
+            RuntimeEventSource.Log("EtwEventProvider.Callback started... guid=" + (sourceId!=null? sourceId->ToString():""));
+
             EtwEventProvider _this = (EtwEventProvider)GCHandle.FromIntPtr((IntPtr)callbackContext).Target!;
 
             if (_this._eventProvider.TryGetTarget(out EventProvider? target))
@@ -855,11 +865,17 @@ namespace System.Diagnostics.Tracing
             long registrationHandle = 0;
             _providerId = eventSource.Guid;
             Guid providerId = _providerId;
+
+            RuntimeEventSource.Log($"EtwEventProvider.Register started... guid=" + providerId.ToString());
+
             uint status = Interop.Advapi32.EventRegister(
                 &providerId,
                 &Callback,
                 (void*)GCHandle.ToIntPtr(_gcHandle),
                 &registrationHandle);
+
+            RuntimeEventSource.Log($"EtwEventProvider.Register finished... guid=" + providerId.ToString());
+
             if (status != 0)
             {
                 _gcHandle.Free();
@@ -1299,6 +1315,8 @@ namespace System.Diagnostics.Tracing
                         long matchAllKeywords,
                         Interop.Advapi32.EVENT_FILTER_DESCRIPTOR* filterData)
         {
+            RuntimeEventSource.Log("ProviderCallback controlCode=" + controlCode.ToString());
+
             // This is an optional callback API. We will therefore ignore any failures that happen as a
             // result of turning on this provider as to not crash the app.
             // EventSource has code to validate whether initialization it expected to occur actually occurred
@@ -1306,6 +1324,8 @@ namespace System.Diagnostics.Tracing
             {
                 if (controlCode == Interop.Advapi32.EVENT_CONTROL_CODE_ENABLE_PROVIDER)
                 {
+                    RuntimeEventSource.Log("HandleEnableNotification");
+
                     Enable(level, matchAnyKeywords, matchAllKeywords);
                     HandleEnableNotification(target, additionalData, level, matchAnyKeywords, matchAllKeywords, filterData);
                     return;
@@ -1324,6 +1344,8 @@ namespace System.Diagnostics.Tracing
                 {
                     return;     // per spec you ignore commands you don't recognize.
                 }
+
+                RuntimeEventSource.Log("invoke OnControllerCommand, command=" + command.ToString());
 
                 target.OnControllerCommand(command, null, 0);
             }
