@@ -125,9 +125,6 @@ mono_global_loader_data_unlock (void)
 	mono_locks_os_release (&global_loader_data_mutex, LoaderGlobalDataLock);
 }
 
-int g_mono_loader_lock_count = 0;
-int g_mono_loader_unlock_count = 0;
-
 /**
  * mono_loader_lock:
  *
@@ -136,14 +133,10 @@ int g_mono_loader_unlock_count = 0;
 void
 mono_loader_lock (void)
 {
-	//g_print("mono_loader_lock, locked %d, unlocked %d", g_mono_loader_lock_count, g_mono_loader_unlock_count);
-
 	mono_locks_coop_acquire (&loader_mutex, LoaderLock);
 	if (G_UNLIKELY (loader_lock_track_ownership)) {
 		mono_native_tls_set_value (loader_lock_nest_id, GUINT_TO_POINTER (GPOINTER_TO_UINT (mono_native_tls_get_value (loader_lock_nest_id)) + 1));
 	}
-
-	++g_mono_loader_lock_count;
 }
 
 /**
@@ -152,14 +145,10 @@ mono_loader_lock (void)
 void
 mono_loader_unlock (void)
 {
-	// g_print("mono_loader_unlock, locked %d, unlocked %d", g_mono_loader_lock_count, g_mono_loader_unlock_count);
-
 	mono_locks_coop_release (&loader_mutex, LoaderLock);
 	if (G_UNLIKELY (loader_lock_track_ownership)) {
 		mono_native_tls_set_value (loader_lock_nest_id, GUINT_TO_POINTER (GPOINTER_TO_UINT (mono_native_tls_get_value (loader_lock_nest_id)) - 1));
 	}
-
-	++g_mono_loader_unlock_count;
 }
 
 /*

@@ -732,11 +732,6 @@ mono_threads_transition_do_blocking (MonoThreadInfo* info, const char *func)
 	int raw_state, cur_state, suspend_count;
 	gboolean no_safepoints;
 
-	if (strcmp(func, "mono_assembly_get_image") == 0)
-	{
-		g_print("do_blocking with mono_assembly_get_image...\n");
-	}
-
 retry_state_change:
 	UNWRAP_THREAD_STATE (raw_state, cur_state, suspend_count, no_safepoints, info);
 	switch (cur_state) {
@@ -835,11 +830,6 @@ mono_threads_transition_abort_blocking (THREAD_INFO_TYPE* info, const char *func
 {
 	int raw_state, cur_state, suspend_count;
 	gboolean no_safepoints;
-
-	if (strcmp(func, "mono_assembly_get_image") == 0)
-	{
-		g_print("abort_blocking with mono_assembly_get_image...");
-	}
 
 retry_state_change:
 	UNWRAP_THREAD_STATE (raw_state, cur_state, suspend_count, no_safepoints, info);
