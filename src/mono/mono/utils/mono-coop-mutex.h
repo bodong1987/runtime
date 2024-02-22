@@ -45,12 +45,16 @@ mono_coop_mutex_destroy (MonoCoopMutex *mutex)
 	mono_os_mutex_destroy (&mutex->m);
 }
 
+extern void mono_log_coop_mutext_lock();
+
 static inline void
 mono_coop_mutex_lock (MonoCoopMutex *mutex)
 {
 	/* Avoid thread state switch if lock is not contended */
 	if (mono_os_mutex_trylock (&mutex->m) == 0)
 		return;
+				
+	mono_log_coop_mutext_lock();	
 
 	MONO_ENTER_GC_SAFE;
 

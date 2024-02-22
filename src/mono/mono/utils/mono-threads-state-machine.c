@@ -137,11 +137,17 @@ check_thread_state (MonoThreadInfo* info)
 #endif
 }
 
+void mono_log_coop_mutext_lock()
+{
+	g_print("[%p]mono_coop_mutex_lock try lock failure, start enter gc safe mode and goto os lock.\n", mono_thread_info_get_tid(mono_thread_info_current_unchecked ()));
+}
+
 static void
 trace_state_change_with_func (const char *transition, MonoThreadInfo *info, int cur_raw_state, int next_state, gboolean next_no_safepoints, int suspend_count_delta, const char *func)
 {
 	check_thread_state (info);
-	THREADS_STATE_MACHINE_DEBUG ("[%s][%p] %s %s -> %s %s (%d -> %d) %s\n",
+		
+	g_print("[%s][%p] %s %s -> %s %s (%d -> %d) %s\n",
 		transition,
 		mono_thread_info_get_tid (info),
 		state_name (get_thread_state (cur_raw_state)),
@@ -159,7 +165,7 @@ static void
 trace_state_change_sigsafe (const char *transition, MonoThreadInfo *info, int cur_raw_state, int next_state, gboolean next_no_safepoints, int suspend_count_delta, const char *func)
 {
 	check_thread_state (info);
-	THREADS_STATE_MACHINE_DEBUG ("[%s][%p] %s %s -> %s %s (%d -> %d) %s\n",
+	g_print ("[%s][%p] %s %s -> %s %s (%d -> %d) %s\n",
 		transition,
 		mono_thread_info_get_tid (info),
 		state_name (get_thread_state (cur_raw_state)),
@@ -726,6 +732,11 @@ mono_threads_transition_do_blocking (MonoThreadInfo* info, const char *func)
 	int raw_state, cur_state, suspend_count;
 	gboolean no_safepoints;
 
+	if (strcmp(func, "mono_assembly_get_image") == 0)
+	{
+		g_print("do_blocking with mono_assembly_get_image...\n");
+	}
+
 retry_state_change:
 	UNWRAP_THREAD_STATE (raw_state, cur_state, suspend_count, no_safepoints, info);
 	switch (cur_state) {
@@ -737,7 +748,7 @@ retry_state_change:
 			mono_fatal_with_history ("no_safepoints = TRUE, but should be FALSE in state RUNNING with DO_BLOCKING");
 		if (thread_state_cas (&info->thread_state, build_thread_state (STATE_BLOCKING, suspend_count, no_safepoints), raw_state) != raw_state)
 			goto retry_state_change;
-		trace_state_change ("DO_BLOCKING", info, raw_state, STATE_BLOCKING, no_safepoints, 0);
+		trace_state_change_sigsafe ("DO_BLOCKING", info, raw_state, STATE_BLOCKING, no_safepoints, 0, func);
 		return DoBlockingContinue;
 
 	case STATE_ASYNC_SUSPEND_REQUESTED:
@@ -745,7 +756,7 @@ retry_state_change:
 			mono_fatal_with_history ("suspend_count = %d, but should be > 0", suspend_count);
 		if (no_safepoints)
 			mono_fatal_with_history ("no_safepoints = TRUE, but should be FALSE in state ASYNC_SUSPEND_REQUESTED with DO_BLOCKING");
-		trace_state_change ("DO_BLOCKING", info, raw_state, cur_state, no_safepoints, 0);
+		trace_state_change_sigsafe ("DO_BLOCKING", info, raw_state, cur_state, no_safepoints, 0, func);
 		return DoBlockingPollAndRetry;
 /*
 STATE_ASYNC_SUSPENDED
@@ -824,6 +835,11 @@ mono_threads_transition_abort_blocking (THREAD_INFO_TYPE* info, const char *func
 {
 	int raw_state, cur_state, suspend_count;
 	gboolean no_safepoints;
+
+	if (strcmp(func, "mono_assembly_get_image") == 0)
+	{
+		g_print("abort_blocking with mono_assembly_get_image...");
+	}
 
 retry_state_change:
 	UNWRAP_THREAD_STATE (raw_state, cur_state, suspend_count, no_safepoints, info);
