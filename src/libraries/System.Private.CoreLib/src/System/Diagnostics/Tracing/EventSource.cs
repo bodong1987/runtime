@@ -498,7 +498,7 @@ namespace System.Diagnostics.Tracing
                 if (value == null)
                     return;
 
-                RuntimeEventSource.Log("EventSourceCommandExecuted Add...\n" + Environment.StackTrace);
+                RuntimeEventSource.Log("EventSourceCommandExecuted Add new one " + Environment.StackTrace);
                 //RuntimeEventSource.Log($"EventSource[{GetHashCode()}] add new one {value}({value.GetHashCode()}) from {System.Environment.StackTrace}");
 
                 m_eventCommandExecuted += value;
@@ -509,7 +509,7 @@ namespace System.Diagnostics.Tracing
                 while (deferredCommands != null)
                 {
                     //  RuntimeEventSource.Log($"EventSource[{GetHashCode()}]Invoke deferred command on this value:{deferredCommands}({deferredCommands.GetHashCode()} Command = {deferredCommands.Command})");
-                    RuntimeEventSource.Log("EventSourceCommandExecuted invoke deferred command...\n" + Environment.StackTrace);
+                    RuntimeEventSource.Log("EventSourceCommandExecuted invoke deferred command... command=" + deferredCommands.Command.ToString() + " eventsource guid=" + deferredCommands.eventSource.Guid + " eventsource  name=" + (deferredCommands.eventSource.Name??"") + " event source hashcoede=" + deferredCommands.eventSource.GetHashCode() + " eventargs hashid=" + deferredCommands.GetHashCode() + "\n" + Environment.StackTrace);
                     value(this, deferredCommands);
                     deferredCommands = deferredCommands.nextCommand;
                 }
@@ -1563,7 +1563,7 @@ namespace System.Diagnostics.Tracing
         // Used by the internal FrameworkEventSource constructor and the TraceLogging-style event source constructor
         internal EventSource(Guid eventSourceGuid, string eventSourceName, EventSourceSettings settings, string[]? traits = null)
         {
-            RuntimeEventSource.Log("Event source constructed... guid=" + eventSourceGuid.ToString() + " eventName=" + eventSourceName);
+            RuntimeEventSource.Log("[" + GetHashCode() + "]Event source constructed... guid=" + eventSourceGuid.ToString() + " eventName=" + eventSourceName);
             // RuntimeEventSource.Log($"EventSource constructed. guid={eventSourceGuid} name={eventSourceName.ToString()??"Invalid"}");
             if (IsSupported)
             {
@@ -2537,6 +2537,11 @@ namespace System.Diagnostics.Tracing
             }
         }
 
+        private string GetDebugInfoString()
+        {
+            return "EventSource[" + GetHashCode() + "] guid=" + m_guid + " name=" + (m_name ?? "");
+        }
+
         // This is the internal entry point that code:EventListeners call when wanting to send a command to a
         // eventSource. The logic is as follows
         //
@@ -2573,6 +2578,8 @@ namespace System.Diagnostics.Tracing
                 return;
             }
 
+            RuntimeEventSource.Log(GetDebugInfoString() + "Send Command, Command=" + command + " enable=" + enable + " level=" + level +"\n" + Environment.StackTrace);
+
             var commandArgs = new EventCommandEventArgs(command, commandArguments, this, listener, eventProviderType, perEventSourceSessionId, enable, level, matchAnyKeyword);
             lock (EventListener.EventListenersLock)
             {
@@ -2585,7 +2592,7 @@ namespace System.Diagnostics.Tracing
                 }
                 else
                 {
-                    RuntimeEventSource.Log("Event source guid=" + m_guid.ToString() + "name=" + (m_name??"") + " added with m_completelyInited = false, command=" + command.ToString() + "\n" + Environment.StackTrace);
+                    RuntimeEventSource.Log(GetDebugInfoString() + " create new EventCommandEventArgs,add to m_deferredCommands, command=" + command.ToString() + " commandArgs hashid=" + commandArgs.GetHashCode() + "\n" + Environment.StackTrace);
 
                     // We can't do the command, simply remember it and we do it when we are fully constructed.
                     if (m_deferredCommands == null)

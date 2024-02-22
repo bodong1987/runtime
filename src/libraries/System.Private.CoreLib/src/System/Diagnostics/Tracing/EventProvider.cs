@@ -783,6 +783,8 @@ namespace System.Diagnostics.Tracing
             _liveSessions = null;
         }
 
+        internal int depth;
+
         protected override unsafe void HandleEnableNotification(
                                     EventProvider target,
                                     byte *additionalData,
@@ -793,7 +795,9 @@ namespace System.Diagnostics.Tracing
         {
             Debug.Assert(additionalData == null);
 
-            RuntimeEventSource.Log("EtwEventProvider HandleEnableNotification...");
+            depth++;
+
+            RuntimeEventSource.Log("\nEtwEventProvider HandleEnableNotification... depth=" + depth);
 
             // The GetSessions() logic was here to support the idea that different ETW sessions
             // could have different user-defined filters. (I believe it is currently broken.)
@@ -802,6 +806,9 @@ namespace System.Diagnostics.Tracing
             // change that needs more careful staging.
             List<KeyValuePair<SessionInfo, bool>> sessionsChanged = GetChangedSessions();
 
+            RuntimeEventSource.Log("sessionsChanged count = " + sessionsChanged.Count);
+
+            int count = 1;
             foreach (KeyValuePair<SessionInfo, bool> session in sessionsChanged)
             {
                 int sessionChanged = session.Key.sessionIdBit;
@@ -811,7 +818,7 @@ namespace System.Diagnostics.Tracing
                 IDictionary<string, string?>? args = null;
                 ControllerCommand command = ControllerCommand.Update;
 
-                RuntimeEventSource.Log("process session info: " + session.Key.etwSessionId + " " + session.Key.sessionIdBit + " bEnabling=" + bEnabling);
+                RuntimeEventSource.Log("(" + count.ToString() + "/" + sessionsChanged.Count + ") " + "process session info: " + session.Key.etwSessionId + " " + session.Key.sessionIdBit + " bEnabling=" + bEnabling);
 
                 // read filter data only when a session is being *added*
                 if (bEnabling)
@@ -839,6 +846,10 @@ namespace System.Diagnostics.Tracing
                 // and if it is negative it will be sent as a disable. See EventSource.DoCommand()
                 target.OnControllerCommand(command, args, bEnabling ? sessionChanged : -sessionChanged);
             }
+
+            RuntimeEventSource.Log("EtwEventProvider End HandleEnableNotification... depth=" + depth + "\n");
+
+            depth--;
         }
 
         [UnmanagedCallersOnly]
@@ -866,7 +877,7 @@ namespace System.Diagnostics.Tracing
             _providerId = eventSource.Guid;
             Guid providerId = _providerId;
 
-            RuntimeEventSource.Log($"EtwEventProvider.Register started... guid=" + providerId.ToString());
+            RuntimeEventSource.Log($"EtwEventProvider.Register started... guid=" + providerId.ToString() + " hashcode=" + eventSource.GetHashCode());
 
             uint status = Interop.Advapi32.EventRegister(
                 &providerId,
@@ -874,7 +885,7 @@ namespace System.Diagnostics.Tracing
                 (void*)GCHandle.ToIntPtr(_gcHandle),
                 &registrationHandle);
 
-            RuntimeEventSource.Log($"EtwEventProvider.Register finished... guid=" + providerId.ToString());
+            RuntimeEventSource.Log($"EtwEventProvider.Register finished... guid=" + providerId.ToString() + " hashcode=" + eventSource.GetHashCode());
 
             if (status != 0)
             {
