@@ -7125,6 +7125,12 @@ send_debug_information (MonoAssembly *ass, Buffer *buf)
 static ErrorCode
 vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 {
+	clock_t t_start;
+	clock_t t_end; 
+	double time_spent;
+
+	g_print("vm_commands:%d", command);
+
 	switch (command) {
 	case CMD_VM_VERSION: {
 		char *build_info, *version;
@@ -7389,7 +7395,7 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		char *fname, *basename;
 		gboolean ignore_case;
 		GPtrArray *res_classes, *res_domains;
-
+				
 		fname = decode_string (p, &p, end);
 		ignore_case = decode_byte (p, &p, end);
 
@@ -7399,6 +7405,9 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		res_domains = g_ptr_array_new ();
 
 		mono_loader_lock ();
+
+		t_start = clock();
+
 		GetTypesForSourceFileArgs args;
 		memset (&args, 0, sizeof (args));
 		args.ignore_case = ignore_case;
@@ -7406,7 +7415,13 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		args.res_classes  = res_classes;
 		args.res_domains = res_domains;
 		mono_de_foreach_domain (get_types_for_source_file, &args);
+
+		t_end = clock();
+
 		mono_loader_unlock ();
+
+		time_spent = (double)(t_end - t_start) / CLOCKS_PER_SEC;
+		g_print("CMD_VM_GET_TYPES_FOR_SOURCE_FILE:%f\n", (float)time_spent);
 
 		g_free (fname);
 		g_free (basename);
@@ -7424,7 +7439,7 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		gboolean ignore_case;
 		GPtrArray *res_classes, *res_domains;
 		MonoTypeNameParse info;
-
+		
 		name = decode_string (p, &p, end);
 		ignore_case = decode_byte (p, &p, end);
 
@@ -7440,6 +7455,7 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		res_domains = g_ptr_array_new ();
 
 		mono_loader_lock ();
+		t_start = clock();
 
 		GetTypesArgs args;
 		memset (&args, 0, sizeof (args));
@@ -7449,8 +7465,12 @@ vm_commands (int command, int id, guint8 *p, guint8 *end, Buffer *buf)
 		args.res_domains = res_domains;
 
 		mono_de_foreach_domain (get_types, &args);
+		t_end = clock();
 
 		mono_loader_unlock ();
+
+		time_spent = (double)(t_end - t_start) / CLOCKS_PER_SEC;
+		g_print("CMD_VM_GET_TYPES:%f\n", (float)time_spent);
 
 		g_free (name);
 		mono_reflection_free_type_info (&info);
