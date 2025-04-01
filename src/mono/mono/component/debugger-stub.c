@@ -19,6 +19,9 @@ static void
 stub_debugger_init (void);
 
 static void
+stub_debugger_cleanup (void);
+
+static void
 stub_debugger_breakpoint_hit (void *sigctx);
 
 static void

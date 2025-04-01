@@ -174,6 +174,7 @@ typedef struct _DebuggerTlsData DebuggerTlsData;
 typedef struct MonoComponentDebugger {
 	MonoComponent component;
 	void (*init) (void);
+	void (*cleanup) (void);
 	void (*user_break) (void);
 	void (*parse_options) (char *options);
 	void (*breakpoint_hit) (void *sigctx);
